@@ -1,0 +1,193 @@
+import React, { useState, useEffect } from 'react';
+import { AlertCircle } from 'lucide-react';
+
+const WORDS = ['ROBBERY', 'DACOITY', 'ASSAULT', 'RIOTING', 'FORGERY'];
+const MAX_GUESSES = 6;
+
+export default function CrimeWordle() {
+  const [targetWord, setTargetWord] = useState('');
+  const [guesses, setGuesses] = useState([]);
+  const [currentGuess, setCurrentGuess] = useState('');
+  const [gameOver, setGameOver] = useState(false);
+  const [won, setWon] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    startNewGame();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (gameOver) return;
+
+      if (e.key === 'Enter') {
+        handleKeyPress('ENTER');
+      } else if (e.key === 'Backspace') {
+        handleKeyPress('BACK');
+      } else if (/^[a-zA-Z]$/.test(e.key)) {
+        handleKeyPress(e.key.toUpperCase());
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentGuess, guesses, gameOver, targetWord]);
+
+  const startNewGame = () => {
+    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+    setTargetWord(word);
+    setGuesses([]);
+    setCurrentGuess('');
+    setGameOver(false);
+    setWon(false);
+    setMessage('');
+  };
+
+  const handleKeyPress = (key) => {
+    if (gameOver) return;
+
+    if (key === 'ENTER') {
+      if (currentGuess.length !== targetWord.length) {
+        setMessage(`Word must be ${targetWord.length} letters`);
+        return;
+      }
+      
+      if (!WORDS.includes(currentGuess)) {
+        setMessage('Not in word list');
+        return;
+      }
+
+      const newGuesses = [...guesses, currentGuess];
+      setGuesses(newGuesses);
+      setMessage('');
+
+      if (currentGuess === targetWord) {
+        setWon(true);
+        setGameOver(true);
+        setMessage('🎉 You won!');
+      } else if (newGuesses.length >= MAX_GUESSES) {
+        setGameOver(true);
+        setMessage(`Game Over! The word was ${targetWord}`);
+      }
+
+      setCurrentGuess('');
+    } else if (key === 'BACK') {
+      setCurrentGuess(currentGuess.slice(0, -1));
+      setMessage('');
+    } else if (currentGuess.length < targetWord.length) {
+      setCurrentGuess(currentGuess + key);
+      setMessage('');
+    }
+  };
+
+  const getLetterColor = (letter, index, word) => {
+    if (word[index] === targetWord[index]) {
+      return 'bg-green-600';
+    }
+    if (targetWord.includes(letter)) {
+      return 'bg-yellow-600';
+    }
+    return 'bg-gray-600';
+  };
+
+  const getKeyColor = (key) => {
+    let color = 'bg-gray-400';
+    
+    for (const guess of guesses) {
+      const index = guess.indexOf(key);
+      if (index !== -1) {
+        if (guess[index] === targetWord[index]) {
+          return 'bg-green-600';
+        } else if (targetWord.includes(key)) {
+          color = 'bg-yellow-600';
+        } else {
+          color = 'bg-gray-600';
+        }
+      }
+    }
+    
+    return color;
+  };
+
+  const keyboard = [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+  ];
+
+  return (
+    <div className="min-h-screen bg-white text-gray-900 p-4 flex flex-col items-center">
+      <div className="w-full max-w-lg">
+        <h1 className="text-4xl font-bold text-center mb-2">Legal Wordle</h1>
+        <p className="text-center text-gray-600 mb-6">Guess the IPC/BNS Offence</p>
+
+        {message && (
+          <div className={`mb-4 p-3 rounded-lg text-center font-semibold ${
+            won ? 'bg-green-600' : gameOver ? 'bg-red-600' : 'bg-yellow-600'
+          }`}>
+            {message}
+          </div>
+        )}
+
+        <div className="mb-6 flex flex-col items-center gap-2">
+          {Array.from({ length: MAX_GUESSES }).map((_, i) => (
+            <div key={i} className="flex gap-2">
+              {Array.from({ length: targetWord.length }).map((_, j) => {
+                const letter = i < guesses.length ? guesses[i][j] : i === guesses.length ? currentGuess[j] : '';
+                const color = i < guesses.length ? getLetterColor(guesses[i][j], j, guesses[i]) : 'bg-white';
+                
+                return (
+                  <div
+                    key={j}
+                    className={`w-14 h-14 border-2 ${
+                      i < guesses.length ? color + ' text-white' : 'border-gray-400'
+                    } flex items-center justify-center text-2xl font-bold rounded`}
+                  >
+                    {letter}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-4">
+          {keyboard.map((row, i) => (
+            <div key={i} className="flex justify-center gap-1 mb-1">
+              {row.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => handleKeyPress(key)}
+                  className={`${
+                    key === 'ENTER' || key === 'BACK' ? 'px-4' : 'w-10'
+                  } h-12 ${getKeyColor(key)} rounded font-semibold text-sm hover:opacity-80 transition-opacity`}
+                >
+                  {key}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {gameOver && (
+          <button
+            onClick={startNewGame}
+            className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Play Again
+          </button>
+        )}
+
+        <div className="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
+          <h2 className="font-bold mb-2">How to Play</h2>
+          <ul className="text-sm text-gray-700 space-y-1">
+            <li>• Guess the word in {MAX_GUESSES} tries</li>
+            <li>• Green = correct letter and position</li>
+            <li>• Yellow = letter in word, wrong position</li>
+            <li>• Gray = letter not in word</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
