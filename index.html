@@ -1,193 +1,414 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
-
-const WORDS = ['ROBBERY', 'DACOITY', 'ASSAULT', 'RIOTING', 'FORGERY'];
-const MAX_GUESSES = 6;
-
-export default function CrimeWordle() {
-  const [targetWord, setTargetWord] = useState('');
-  const [guesses, setGuesses] = useState([]);
-  const [currentGuess, setCurrentGuess] = useState('');
-  const [gameOver, setGameOver] = useState(false);
-  const [won, setWon] = useState(false);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    startNewGame();
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (gameOver) return;
-
-      if (e.key === 'Enter') {
-        handleKeyPress('ENTER');
-      } else if (e.key === 'Backspace') {
-        handleKeyPress('BACK');
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        handleKeyPress(e.key.toUpperCase());
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentGuess, guesses, gameOver, targetWord]);
-
-  const startNewGame = () => {
-    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
-    setTargetWord(word);
-    setGuesses([]);
-    setCurrentGuess('');
-    setGameOver(false);
-    setWon(false);
-    setMessage('');
-  };
-
-  const handleKeyPress = (key) => {
-    if (gameOver) return;
-
-    if (key === 'ENTER') {
-      if (currentGuess.length !== targetWord.length) {
-        setMessage(`Word must be ${targetWord.length} letters`);
-        return;
-      }
-      
-      if (!WORDS.includes(currentGuess)) {
-        setMessage('Not in word list');
-        return;
-      }
-
-      const newGuesses = [...guesses, currentGuess];
-      setGuesses(newGuesses);
-      setMessage('');
-
-      if (currentGuess === targetWord) {
-        setWon(true);
-        setGameOver(true);
-        setMessage('🎉 You won!');
-      } else if (newGuesses.length >= MAX_GUESSES) {
-        setGameOver(true);
-        setMessage(`Game Over! The word was ${targetWord}`);
-      }
-
-      setCurrentGuess('');
-    } else if (key === 'BACK') {
-      setCurrentGuess(currentGuess.slice(0, -1));
-      setMessage('');
-    } else if (currentGuess.length < targetWord.length) {
-      setCurrentGuess(currentGuess + key);
-      setMessage('');
-    }
-  };
-
-  const getLetterColor = (letter, index, word) => {
-    if (word[index] === targetWord[index]) {
-      return 'bg-green-600';
-    }
-    if (targetWord.includes(letter)) {
-      return 'bg-yellow-600';
-    }
-    return 'bg-gray-600';
-  };
-
-  const getKeyColor = (key) => {
-    let color = 'bg-gray-400';
-    
-    for (const guess of guesses) {
-      const index = guess.indexOf(key);
-      if (index !== -1) {
-        if (guess[index] === targetWord[index]) {
-          return 'bg-green-600';
-        } else if (targetWord.includes(key)) {
-          color = 'bg-yellow-600';
-        } else {
-          color = 'bg-gray-600';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Wordle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
-    }
-    
-    return color;
-  };
 
-  const keyboard = [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
-  ];
+        body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
 
-  return (
-    <div className="min-h-screen bg-white text-gray-900 p-4 flex flex-col items-center">
-      <div className="w-full max-w-lg">
-        <h1 className="text-4xl font-bold text-center mb-2">Legal Wordle</h1>
-        <p className="text-center text-gray-600 mb-6">Guess the IPC/BNS Offence</p>
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
 
-        {message && (
-          <div className={`mb-4 p-3 rounded-lg text-center font-semibold ${
-            won ? 'bg-green-600' : gameOver ? 'bg-red-600' : 'bg-yellow-600'
-          }`}>
-            {message}
-          </div>
-        )}
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
 
-        <div className="mb-6 flex flex-col items-center gap-2">
-          {Array.from({ length: MAX_GUESSES }).map((_, i) => (
-            <div key={i} className="flex gap-2">
-              {Array.from({ length: targetWord.length }).map((_, j) => {
-                const letter = i < guesses.length ? guesses[i][j] : i === guesses.length ? currentGuess[j] : '';
-                const color = i < guesses.length ? getLetterColor(guesses[i][j], j, guesses[i]) : 'bg-white';
-                
-                return (
-                  <div
-                    key={j}
-                    className={`w-14 h-14 border-2 ${
-                      i < guesses.length ? color + ' text-white' : 'border-gray-400'
-                    } flex items-center justify-center text-2xl font-bold rounded`}
-                  >
-                    {letter}
-                  </div>
-                );
-              })}
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #d3d6da;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .tile.filled {
+            border-color: #878a8c;
+            animation: pop 0.1s;
+        }
+
+        .tile.correct {
+            background: #6aaa64;
+            border-color: #6aaa64;
+            color: white;
+        }
+
+        .tile.present {
+            background: #c9b458;
+            border-color: #c9b458;
+            color: white;
+        }
+
+        .tile.absent {
+            background: #787c7e;
+            border-color: #787c7e;
+            color: white;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .key {
+            padding: 12px;
+            min-width: 30px;
+            background: #d3d6da;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-transform: uppercase;
+        }
+
+        .key:hover {
+            background: #a8aaad;
+        }
+
+        .key.wide {
+            min-width: 60px;
+            font-size: 0.8em;
+        }
+
+        .key.correct {
+            background: #6aaa64;
+            color: white;
+        }
+
+        .key.present {
+            background: #c9b458;
+            color: white;
+        }
+
+        .key.absent {
+            background: #787c7e;
+            color: white;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .message.win {
+            color: #6aaa64;
+        }
+
+        .message.lose {
+            color: #c9b458;
+        }
+
+        .new-game {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 24px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .new-game:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Legal Wordle</h1>
+        <p class="subtitle">Guess the 7-letter IPC/BNS Offence</p>
+        
+        <div class="game-board" id="board"></div>
+        
+        <div class="keyboard">
+            <div class="keyboard-row">
+                <button class="key" data-key="q">Q</button>
+                <button class="key" data-key="w">W</button>
+                <button class="key" data-key="e">E</button>
+                <button class="key" data-key="r">R</button>
+                <button class="key" data-key="t">T</button>
+                <button class="key" data-key="y">Y</button>
+                <button class="key" data-key="u">U</button>
+                <button class="key" data-key="i">I</button>
+                <button class="key" data-key="o">O</button>
+                <button class="key" data-key="p">P</button>
             </div>
-          ))}
-        </div>
-
-        <div className="mb-4">
-          {keyboard.map((row, i) => (
-            <div key={i} className="flex justify-center gap-1 mb-1">
-              {row.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => handleKeyPress(key)}
-                  className={`${
-                    key === 'ENTER' || key === 'BACK' ? 'px-4' : 'w-10'
-                  } h-12 ${getKeyColor(key)} rounded font-semibold text-sm hover:opacity-80 transition-opacity`}
-                >
-                  {key}
-                </button>
-              ))}
+            <div class="keyboard-row">
+                <button class="key" data-key="a">A</button>
+                <button class="key" data-key="s">S</button>
+                <button class="key" data-key="d">D</button>
+                <button class="key" data-key="f">F</button>
+                <button class="key" data-key="g">G</button>
+                <button class="key" data-key="h">H</button>
+                <button class="key" data-key="j">J</button>
+                <button class="key" data-key="k">K</button>
+                <button class="key" data-key="l">L</button>
             </div>
-          ))}
+            <div class="keyboard-row">
+                <button class="key wide" data-key="enter">Enter</button>
+                <button class="key" data-key="z">Z</button>
+                <button class="key" data-key="x">X</button>
+                <button class="key" data-key="c">C</button>
+                <button class="key" data-key="v">V</button>
+                <button class="key" data-key="b">B</button>
+                <button class="key" data-key="n">N</button>
+                <button class="key" data-key="m">M</button>
+                <button class="key wide" data-key="backspace">⌫</button>
+            </div>
         </div>
-
-        {gameOver && (
-          <button
-            onClick={startNewGame}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition-colors"
-          >
-            Play Again
-          </button>
-        )}
-
-        <div className="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
-          <h2 className="font-bold mb-2">How to Play</h2>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>• Guess the word in {MAX_GUESSES} tries</li>
-            <li>• Green = correct letter and position</li>
-            <li>• Yellow = letter in word, wrong position</li>
-            <li>• Gray = letter not in word</li>
-          </ul>
-        </div>
-      </div>
+        
+        <div class="message" id="message"></div>
+        <button class="new-game" id="newGame" style="display: none;">New Game</button>
     </div>
-  );
-}
+
+    <script>
+        const words = ['ROBBERY', 'DACOITY', 'ASSAULT', 'RIOTING', 'FORGERY'];
+        let targetWord = words[Math.floor(Math.random() * words.length)];
+        let currentRow = 0;
+        let currentGuess = '';
+        let gameOver = false;
+        const maxGuesses = 6;
+        const wordLength = 7;
+
+        const board = document.getElementById('board');
+        const message = document.getElementById('message');
+        const newGameBtn = document.getElementById('newGame');
+        const keys = document.querySelectorAll('.key');
+
+        function initBoard() {
+            board.innerHTML = '';
+            for (let i = 0; i < maxGuesses; i++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                for (let j = 0; j < wordLength; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.id = `tile-${i}-${j}`;
+                    row.appendChild(tile);
+                }
+                board.appendChild(row);
+            }
+        }
+
+        function updateBoard() {
+            for (let i = 0; i < wordLength; i++) {
+                const tile = document.getElementById(`tile-${currentRow}-${i}`);
+                if (i < currentGuess.length) {
+                    tile.textContent = currentGuess[i];
+                    tile.classList.add('filled');
+                } else {
+                    tile.textContent = '';
+                    tile.classList.remove('filled');
+                }
+            }
+        }
+
+        function checkGuess() {
+            if (currentGuess.length !== wordLength) {
+                showMessage('Not enough letters');
+                return;
+            }
+
+            const guess = currentGuess;
+            const result = [];
+            const targetLetters = targetWord.split('');
+            const guessLetters = guess.split('');
+            const letterCount = {};
+
+            // Count letters in target
+            for (let letter of targetLetters) {
+                letterCount[letter] = (letterCount[letter] || 0) + 1;
+            }
+
+            // First pass: mark correct letters
+            for (let i = 0; i < wordLength; i++) {
+                if (guessLetters[i] === targetLetters[i]) {
+                    result[i] = 'correct';
+                    letterCount[guessLetters[i]]--;
+                }
+            }
+
+            // Second pass: mark present letters
+            for (let i = 0; i < wordLength; i++) {
+                if (result[i] !== 'correct') {
+                    if (letterCount[guessLetters[i]] > 0) {
+                        result[i] = 'present';
+                        letterCount[guessLetters[i]]--;
+                    } else {
+                        result[i] = 'absent';
+                    }
+                }
+            }
+
+            // Animate and color tiles
+            for (let i = 0; i < wordLength; i++) {
+                const tile = document.getElementById(`tile-${currentRow}-${i}`);
+                setTimeout(() => {
+                    tile.classList.add(result[i]);
+                }, i * 100);
+
+                // Update keyboard
+                const key = document.querySelector(`[data-key="${guessLetters[i].toLowerCase()}"]`);
+                if (key) {
+                    if (result[i] === 'correct') {
+                        key.classList.add('correct');
+                        key.classList.remove('present', 'absent');
+                    } else if (result[i] === 'present' && !key.classList.contains('correct')) {
+                        key.classList.add('present');
+                        key.classList.remove('absent');
+                    } else if (result[i] === 'absent' && !key.classList.contains('correct') && !key.classList.contains('present')) {
+                        key.classList.add('absent');
+                    }
+                }
+            }
+
+            if (guess === targetWord) {
+                gameOver = true;
+                setTimeout(() => {
+                    showMessage('You won! 🎉', 'win');
+                    newGameBtn.style.display = 'block';
+                }, 700);
+            } else if (currentRow === maxGuesses - 1) {
+                gameOver = true;
+                setTimeout(() => {
+                    showMessage(`Game Over! Word was: ${targetWord}`, 'lose');
+                    newGameBtn.style.display = 'block';
+                }, 700);
+            } else {
+                currentRow++;
+                currentGuess = '';
+            }
+        }
+
+        function showMessage(text, type = '') {
+            message.textContent = text;
+            message.className = 'message ' + type;
+            if (!type) {
+                setTimeout(() => {
+                    message.textContent = '';
+                }, 2000);
+            }
+        }
+
+        function handleKeyPress(key) {
+            if (gameOver) return;
+
+            if (key === 'enter') {
+                checkGuess();
+            } else if (key === 'backspace') {
+                currentGuess = currentGuess.slice(0, -1);
+                updateBoard();
+            } else if (currentGuess.length < wordLength && /^[a-z]$/.test(key)) {
+                currentGuess += key.toUpperCase();
+                updateBoard();
+            }
+        }
+
+        // Keyboard listeners
+        keys.forEach(key => {
+            key.addEventListener('click', () => {
+                handleKeyPress(key.dataset.key);
+            });
+        });
+
+        // Physical keyboard listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleKeyPress('enter');
+            } else if (e.key === 'Backspace') {
+                handleKeyPress('backspace');
+            } else if (/^[a-zA-Z]$/.test(e.key)) {
+                handleKeyPress(e.key.toLowerCase());
+            }
+        });
+
+        // New game
+        newGameBtn.addEventListener('click', () => {
+            targetWord = words[Math.floor(Math.random() * words.length)];
+            currentRow = 0;
+            currentGuess = '';
+            gameOver = false;
+            message.textContent = '';
+            newGameBtn.style.display = 'none';
+            
+            // Reset keyboard
+            keys.forEach(key => {
+                key.classList.remove('correct', 'present', 'absent');
+            });
+            
+            initBoard();
+        });
+
+        // Initialize game
+        initBoard();
+    </script>
+</body>
+</html>
